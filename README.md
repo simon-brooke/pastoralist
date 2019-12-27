@@ -23,7 +23,7 @@ To generate the majority of the code, run
 
 **NOTE THAT** currently this relies on development versions of the ADL framework; in order to work for you locally, this requires that you check out the development branches of each of
 
-1. [adl-support](https://github.com/simon-brooke/adl-support/)
+1. [adl-support](https://github.com/simon-brooke/adl-support/);
 2. [adl](https://github.com/simon-brooke/adl); and
 3. [lein-adl](https://github.com/simon-brooke/lein-adl)
 
