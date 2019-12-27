@@ -3,7 +3,7 @@
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
 
-  :dependencies [[adl-support "0.1.6"]
+  :dependencies [[adl-support "0.1.7-SNAPSHOT"]
                  [ch.qos.logback/logback-classic "1.2.3"]
                  [cheshire "5.9.0"]
                  [clj-oauth "1.5.5"]

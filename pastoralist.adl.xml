@@ -55,7 +55,7 @@ version="0.0.1">
       <prompt prompt="Area in Ha" locale="en_GB.UTF-8"/>
     </property>
     <property name="holding" type="entity" entity="holding" required="true"/>
-    <property name="geometry" type="entity" entity="polygon" required="true">
+    <!-- property name="geometry" type="entity" entity="polygon" required="true">
       <documentation>
         Polygon is a first-class datatype in PostGIS, but ADL does not yet
         support this. Solutions:
@@ -67,7 +67,7 @@ version="0.0.1">
         should not be edited; rather it should be marked inactive, and new
         pasture record(s) created.
       </documentation>
-    </property>
+    </property -->
     <property name="subdivision-of" type="entity" entity="pasture"/>
     <property name="is-active" type="boolean" default="true">
       <documentation>Records are not normally deleted from this system because
@@ -108,6 +108,7 @@ version="0.0.1">
     <property name="animal-identifier" type="string" size="64" distinct="user" required="true">
       <prompt prompt="Ear-tag Number" locale="en_GB.UTF-8"/>
     </property>
+    <property name="name" type="string" size="64" distinct="user"/>
     <property name="gender" type="entity" entity="gender" required="true"/>
     <property name="species" type="entity" entity="species" required="true"/>
     <property name="breed" type="entity" entity="breed"/>
@@ -157,13 +158,46 @@ version="0.0.1">
     <property name="notes" type="text"/>
   </entity>
 
+  <entity name="event-type" magnitude="3" volatility="5">
+    <key>
+      <property required="true" type="integer" name="id"
+                column="id" immutable="true" distinct="system">
+        <generator action="native"/>
+      </property>
+    </key>
+    <property name="summary" type="string" size="80"/>
+    <property name="description" type="text"/>
+    <property name="n-holdings" type="integer" default="1">
+      <documentation>
+        Number of holdings affected by this event type; if an animal movement on
+        or off, for example, it will be two, otherwise normally one.
+      </documentation>
+      <prompt prompt="No. of Holdings Affected" locale="en_GB.UTF-8"/>
+    </property>
+    <property name="n-pastures" type="integer" default="1">
+      <documentation>
+        Number of pastures affected by this event type; if an animal movement between
+        pastures, for example, it will be two, otherwise normally one.
+      </documentation>
+      <prompt prompt="No. of Pastures Affected" locale="en_GB.UTF-8"/>
+    </property>
+    <property name="n-animals" type="integer" default="1">
+      <documentation>
+        Number of animals affected by this event type. If a value greater than 10
+        is recorded, that will be treated as 'many'. TODO: not comfortable that
+        that is the right way to handle 'many'.
+      </documentation>
+      <prompt prompt="No. of Animals Affected" locale="en_GB.UTF-8"/>
+    </property>
+  </entity>
+
   <entity name="user" magnitude="6" volatility="3">
     <key>
-      <property required="true" type="string" name="username"
+      <property required="true" type="string" name="username" size="32"
                 column="username" immutable="true" distinct="all"/>
     </key>
-        <property required="true" type="string" name="fullname"
-    column="fullname" size="64" distinct="user">
+    <property required="true" type="string" name="fullname"
+              column="fullname" size="64" distinct="user">
       <prompt prompt="fullname" locale="en_GB.UTF-8"/>
     </property>
     <property name="avatar" type="image" size="256">
@@ -176,20 +210,20 @@ version="0.0.1">
       <prompt prompt="Bio" locale="en_GB.UTF-8"/>
     </property>
     <property type="string" name="phone" column="phone" size="16"
-    distinct="user">
+              distinct="user">
       <documentation>Does a canvasser record need a phone field? There is a phone
         field on the elector record. I suppose, for under-16 canvassers, there may
         be no elector record.</documentation>
       <prompt prompt="phone" locale="en_GB.UTF-8"/>
     </property>
     <property type="string" name="email" column="email" size="128"
-    distinct="user">
+              distinct="user">
       <prompt prompt="email" locale="en_GB.UTF-8"/>
     </property>
-    <property required="true" type="entity" name="authority_id"
+    <!-- property required="true" type="entity" name="authority_id"
     entity="authorities" farkey="id">
       <prompt prompt="authority_id" locale="en_GB.UTF-8"/>
-    </property>
+    </property -->
     <property type="boolean" name="authorised" column="authorised">
       <prompt prompt="authorised" locale="en_GB.UTF-8"/>
     </property>
