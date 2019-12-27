@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DOCTYPE application PUBLIC "-//JOURNEYMAN//DTD ADL 1.4.1//EN"
+"http://www.journeyman.cc/adl/stable/adl/schemas/adl-1.4.1.dtd" -->
+<application xmlns="http://bowyer.journeyman.cc/adl/1.4.1/"
+xmlns:html="http://www.w3.org/1999/xhtml"
+xmlns:adl="http://bowyer.journeyman.cc/adl/1.4.1/" name="pastoralist"
+version="0.0.1">
+
+  <documentation>A web-app intended to be used by pastoralists in managing
+    pastures, grazing, and animals.</documentation>
+
+  <entity name="holding" magnitude="7" volatility="1">
+    <documentation>All holdings used to the system</documentation>
+    <key>
+      <documentation>Although in the UK and, probably, in many other
+        countries, holdings have a unique, government issued, holding
+        number which could rationally be used as a key, internationally
+        we cannot rely on this.
+      </documentation>
+      <property required="true" type="integer" name="id"
+                column="id" immutable="true" distinct="system">
+        <generator action="native"/>
+      </property>
+    </key>
+    <property size="64" type="string" name="holding-identifier" distinct="all">
+      <prompt prompt="Holding Number" locale="en_GB.UTF-8" immutable="true"/>
+    </property>
+    <property size="128" type="string" name="name" distinct="user"/>
+    <property type="list" name="pastures" entity="pasture"/>
+    <property type="list" name="animals" entity="animal"/>
+    <property type="link" name="users" entity="user">
+      <documentation>A user is a person authorised to see data on a holding.
+      Some users (e.g. vets, farm secretaries) may be authorised to see data
+      on many holdings.</documentation>
+    </property>
+    <property name="is-active" type="boolean" default="true">
+      <documentation>Records are not normally deleted from this system because
+      of historical data integrity; we may want to trace the history of an
+      animal across holdings even after a holding has ceased to be active
+      in the system.</documentation>
+    </property>
+  </entity>
+
+  <entity name="pasture" magnitude="8" volatility="2">
+    <documentation>A pasture within a holding. TODO: how should common pastures,
+      or pastures otherwise shared between holdings, be handled?</documentation>
+    <key>
+      <property required="true" type="integer" name="id"
+                column="id" immutable="true" distinct="system">
+        <generator action="native"/>
+      </property>
+    </key>
+    <property size="128" type="string" name="name" distinct="user"/>
+    <property type="real" name="area" distinct="user">
+      <prompt prompt="Area in Ha" locale="en_GB.UTF-8"/>
+    </property>
+    <property name="holding" type="entity" entity="holding" required="true"/>
+    <property name="geometry" type="entity" entity="polygon" required="true">
+      <documentation>
+        Polygon is a first-class datatype in PostGIS, but ADL does not yet
+        support this. Solutions:
+        1. hack ADL to support native polygons;
+        2. implement our own polygon datatype;
+        3. work-around in override code.
+
+        Generally, when pasture boundaries are changed, a pasture record
+        should not be edited; rather it should be marked inactive, and new
+        pasture record(s) created.
+      </documentation>
+    </property>
+    <property name="subdivision-of" type="entity" entity="pasture"/>
+    <property name="is-active" type="boolean" default="true">
+      <documentation>Records are not normally deleted from this system because
+        of historical data integrity; we may want to trace the history of an
+        pasture even after pasture boundaries have been changed.
+
+        Indeed, if we treat subdivisions as pastures (which would be quite sensible),
+        active pastures in the system will change quite frequently, especially if
+        strip-grazing is used.
+      </documentation>
+    </property>
+    <property name="history" type="link" entity="event"/>
+  </entity>
+
+  <entity name="animal" magnitude="9" volatility="5">
+    <documentation>An animal on a holding (or which has been on a holding; the
+    historical record is not wiped when an animal dies, is killed, or is sold)
+    </documentation>
+    <key>
+      <documentation>Although in the UK and, probably, in many other
+        countries, animals have a unique, government registered, identifying
+        number which could rationally be used as a key, internationally
+        we cannot rely on this.
+      </documentation>
+      <property required="true" type="integer" name="id"
+                column="id" immutable="true" distinct="system">
+        <generator action="native"/>
+      </property>
+    </key>
+    <property name="holding" type="entity" entity="holding">
+    <documentation>The holding the animal is currently on, if any. Not 'required',
+      since the animal may be dead, or simply moved off to a holding which is
+      not part of the system.</documentation>
+    </property>
+    <property name="dam" type="entity" entity="animal"/>
+    <property name="sire" type="entity" entity="animal"/>
+    <property name="born" type="date" immutable="true" required="true"/>
+    <property name="animal-identifier" type="string" size="64" distinct="user" required="true">
+      <prompt prompt="Ear-tag Number" locale="en_GB.UTF-8"/>
+    </property>
+    <property name="gender" type="entity" entity="gender" required="true"/>
+    <property name="species" type="entity" entity="species" required="true"/>
+    <property name="breed" type="entity" entity="breed"/>
+    <property name="is-pedigree" type="boolean" default="false"/>
+    <property name="pasture" type="entity" entity="pasture"/>
+    <property name="history" type="link" entity="event"/>
+  </entity>
+
+  <entity name="gender" magnitude="1" volatility="10">
+    <key>
+      <property name="gender" type="string" size="8" distinct="all" immutable="true"/>
+    </key>
+  </entity>
+
+  <entity name="species" magnitude="2" volatility="5">
+    <key>
+      <property name="species" type="string" size="32" distinct="all" immutable="true"/>
+    </key>
+  </entity>
+
+  <entity name="breed" magnitude="1" volatility="10">
+    <key>
+      <property name="breed" type="string" size="32" distinct="all" immutable="true"/>
+    </key>
+    <property name="species" type="entity" entity="species"/>
+  </entity>
+
+  <entity name="event" magnitude="9" volatility="2">
+    <key>
+      <property required="true" type="integer" name="id"
+                column="id" immutable="true" distinct="system">
+        <generator action="native"/>
+      </property>
+    </key>
+    <property name="type" type="entity" entity="event-type"></property>
+    <property name="actor" type="entity" entity="user" required="true" immutable="true">
+      <documentation>The user who recorded this event.</documentation>
+    </property>
+    <promperty name="date" type="timestamp" required="true" default="now()"/>
+    <property name="pastures" type="link" entity="pasture">
+      <documentation>Pastures affected by this event.</documentation>
+    </property>
+    <property name="animals" type="link" entity="animal">
+      <documentation>Animals affected by this event.</documentation>
+    </property>
+    <property name="summary" type="string" size="80"/>
+    <property name="notes" type="text"/>
+  </entity>
+
+  <entity name="user" magnitude="6" volatility="3">
+    <key>
+      <property required="true" type="string" name="username"
+                column="username" immutable="true" distinct="all"/>
+    </key>
+        <property required="true" type="string" name="fullname"
+    column="fullname" size="64" distinct="user">
+      <prompt prompt="fullname" locale="en_GB.UTF-8"/>
+    </property>
+    <property name="avatar" type="image" size="256">
+      <documentation>An image of the canvasser, so that other members of their
+        team can recognise them.</documentation>
+      <prompt prompt="Avatar" locale="en_GB.UTF-8"/>
+    </property>
+    <property name="bio" type="text">
+      <documentation>Information the canvasser supplies about themselves; an introduction.</documentation>
+      <prompt prompt="Bio" locale="en_GB.UTF-8"/>
+    </property>
+    <property type="string" name="phone" column="phone" size="16"
+    distinct="user">
+      <documentation>Does a canvasser record need a phone field? There is a phone
+        field on the elector record. I suppose, for under-16 canvassers, there may
+        be no elector record.</documentation>
+      <prompt prompt="phone" locale="en_GB.UTF-8"/>
+    </property>
+    <property type="string" name="email" column="email" size="128"
+    distinct="user">
+      <prompt prompt="email" locale="en_GB.UTF-8"/>
+    </property>
+    <property required="true" type="entity" name="authority_id"
+    entity="authorities" farkey="id">
+      <prompt prompt="authority_id" locale="en_GB.UTF-8"/>
+    </property>
+    <property type="boolean" name="authorised" column="authorised">
+      <prompt prompt="authorised" locale="en_GB.UTF-8"/>
+    </property>
+  </entity>
+</application>
